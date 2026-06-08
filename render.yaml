@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: droneeye-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    envVars:
+      - key: ENABLE_SIMULATOR
+        value: "true"
+      - key: SIMULATOR_INTERVAL
+        value: "2.0"
+      - key: DETECTION_CONFIDENCE_THRESHOLD
+        value: "0.45"
+      - key: ALERT_COOLDOWN_SECONDS
+        value: "10"

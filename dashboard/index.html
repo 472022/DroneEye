@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DroneEye AI real-time operator dashboard">
+  <title>DroneEye AI Operator Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/gauges.css">
+</head>
+<body>
+  <div id="app-shell">
+    <header id="topbar">
+      <div class="logo" aria-label="DroneEye AI Operator Dashboard">
+        <div class="logo-name">DroneEye AI</div>
+        <div class="logo-mode">OPERATOR</div>
+      </div>
+
+      <nav class="status-pills" aria-label="System status">
+        <span class="status-pill" id="pill-esp32">ESP32</span>
+        <span class="status-pill" id="pill-gps">GPS</span>
+        <span class="status-pill" id="pill-camera">CAMERA</span>
+        <span class="status-pill" id="pill-ai">AI MODEL</span>
+      </nav>
+
+      <div class="topbar-actions">
+        <div id="top-clock" aria-live="polite">--:--:--</div>
+        <button id="settings-btn" type="button" aria-label="Open settings">&#9881;</button>
+      </div>
+    </header>
+
+    <main id="main-grid">
+      <aside id="gauges-col" aria-label="Sensor gauges">
+        <article class="gauge-card" id="gauge-voltage">
+          <div class="gauge-header">
+            <span class="gauge-title">VOLTAGE</span>
+            <span class="gauge-icon">&#x26A1;</span>
+          </div>
+          <div class="gauge-value-row">
+            <span class="gauge-value" id="val-voltage">0.00</span>
+            <span class="gauge-unit">kV</span>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="fill-voltage"></div>
+          </div>
+          <div class="gauge-range">
+            <span>0 kV</span>
+            <span>15 kV</span>
+          </div>
+          <svg class="sparkline-svg" id="spark-voltage" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true">
+            <polyline class="spark-line" points=""></polyline>
+          </svg>
+        </article>
+
+        <article class="gauge-card" id="gauge-current">
+          <div class="gauge-header">
+            <span class="gauge-title">CURRENT</span>
+            <span class="gauge-icon">&#x23C1;</span>
+          </div>
+          <div class="gauge-value-row">
+            <span class="gauge-value" id="val-current">0.00</span>
+            <span class="gauge-unit">A</span>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="fill-current"></div>
+          </div>
+          <div class="gauge-range">
+            <span>0 A</span>
+            <span>30 A</span>
+          </div>
+          <svg class="sparkline-svg" id="spark-current" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true">
+            <polyline class="spark-line" points=""></polyline>
+          </svg>
+        </article>
+
+        <article class="gauge-card" id="gauge-temperature">
+          <div class="gauge-header">
+            <span class="gauge-title">TEMPERATURE</span>
+            <span class="gauge-icon">&#x2103;</span>
+          </div>
+          <div class="gauge-value-row">
+            <span class="gauge-value" id="val-temperature">0.00</span>
+            <span class="gauge-unit">C</span>
+          </div>
+          <div class="gauge-track">
+            <div class="gauge-fill" id="fill-temperature"></div>
+          </div>
+          <div class="gauge-range">
+            <span>0 C</span>
+            <span>100 C</span>
+          </div>
+          <svg class="sparkline-svg" id="spark-temperature" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true">
+            <polyline class="spark-line" points=""></polyline>
+          </svg>
+        </article>
+
+        <article class="gauge-card" id="gauge-vibration">
+          <div class="gauge-header">
+            <span class="gauge-title">VIBRATION</span>
+            <span class="gauge-icon">&#x25CC;</span>
+          </div>
+          <div class="vibration-badge" id="vib-badge">NONE</div>
+          <div class="sensor-caption">SW-420 Sensor</div>
+        </article>
+      </aside>
+
+      <section id="center-col" aria-label="Live video and AI detection">
+        <section class="panel" id="camera-panel">
+          <div class="panel-titlebar">
+            <h1>LIVE FEED</h1>
+            <div class="panel-meta">
+              <span id="cam-ip-label">--</span>
+              <span id="fps-counter">-- fps</span>
+            </div>
+          </div>
+          <div class="cam-container">
+            <img id="cam-feed" src="/api/stream" alt="Live camera feed">
+            <div class="cam-overlay" id="gps-overlay">GPS: --</div>
+          </div>
+        </section>
+
+        <section class="panel" id="detection-panel">
+          <div class="panel-titlebar">
+            <h2>AI DETECTION RESULT</h2>
+            <span id="det-timestamp">--</span>
+          </div>
+          <div class="risk-badge" id="risk-badge">NO FAULT</div>
+          <div class="conf-track">
+            <div class="conf-fill" id="conf-fill"></div>
+          </div>
+          <div class="det-label" id="det-label">Waiting for detection...</div>
+        </section>
+      </section>
+
+      <aside id="right-col" aria-label="GPS and alert monitoring">
+        <section class="panel" id="map-panel">
+          <div class="panel-titlebar">
+            <h2>GPS LOCATION</h2>
+            <span id="gps-fix-status">NO FIX</span>
+          </div>
+          <div id="gps-map"></div>
+          <div id="map-coords">--N, --E</div>
+        </section>
+
+        <section class="panel" id="alert-panel">
+          <div class="panel-titlebar">
+            <h2>ALERT LOG</h2>
+            <div class="panel-actions">
+              <span id="alert-count" class="count-badge">0</span>
+              <button id="alert-clear-btn" type="button">Clear</button>
+            </div>
+          </div>
+          <div id="alert-list">
+            <div class="alert-empty">No alerts &mdash; system nominal</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div id="settings-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:14px;font-weight:700;color:var(--text)">Settings</span>
+      <button id="settings-close" class="setting-btn secondary" style="width:auto;padding:6px 12px">Close</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 8px">
+    <div class="setting-group">
+      <label class="setting-label">ESP32 Sensor IP</label>
+      <input class="setting-input" id="s-esp32-ip" type="text" placeholder="192.168.1.100">
+    </div>
+    <div class="setting-group">
+      <label class="setting-label">ESP32-CAM IP</label>
+      <input class="setting-input" id="s-cam-ip" type="text" placeholder="192.168.1.101">
+    </div>
+    <div class="setting-group">
+      <label class="setting-label" style="display:flex;justify-content:space-between">
+        Confidence Threshold <span id="s-threshold-val" style="color:var(--accent)">0.45</span>
+      </label>
+      <input class="setting-input" id="s-threshold" type="range" min="0.30" max="0.90" step="0.05" value="0.45" style="padding:4px 0;border:none;background:none;accent-color:var(--accent)">
+    </div>
+    <div class="setting-group">
+      <label class="setting-label">Alert Cooldown (seconds)</label>
+      <input class="setting-input" id="s-cooldown" type="number" value="10" min="1" max="120">
+    </div>
+    <button id="settings-save" class="setting-btn primary">Save &amp; Apply</button>
+    <button id="settings-test" class="setting-btn secondary" style="margin-top:4px">Test Connection</button>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:8px;line-height:1.5">
+      Changes apply to the running server session. Restart run.py to make them permanent in .env.
+    </p>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay">
+    <div class="loading-ring"></div>
+    <div class="loading-text">Connecting to DroneEye...</div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/gauges.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/alerts.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
